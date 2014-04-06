@@ -24,7 +24,7 @@ def read_text(directory_path):
 
     for file in files:
         text = open(file, 'r').read()
-        text_list.append(text)
+    text_list.append(text)
 
     return text_list
 
@@ -89,6 +89,12 @@ def get_n_most_similar_job_posts(similarity_matrix, resume_indices, n=10):
 
 
 def show_results(result_lists, n_resume):
+    """
+    Show the results in formatted way.
+
+    :param result_lists: results to show
+    :param n_resume: the number of resumes
+    """
     # note that this 'resume_indices' is different from the one in 'get_n_most_similar_job_posts'
     resume_indices = range(n_resume)
     for (result, resume_index) in zip(result_lists, resume_indices):

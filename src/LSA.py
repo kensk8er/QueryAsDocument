@@ -112,7 +112,7 @@ def get_n_most_similar_job_posts(similarity_matrix, resume_index_list, n=10):
     return return_list
 
 
-def show_results(result_lists, resume_indices, job_indices):
+def show_recommendation_results(result_lists, resume_indices, job_indices):
     """
     Show the results in formatted way.
 
@@ -220,5 +220,9 @@ if __name__ == '__main__':
                                            n=n_results,
                                            resume_index_list=range(n_resume))  # resumes come after job posts
 
-    print 'show results for each resume:\n'
-    show_results(result_lists=results, resume_indices=resume_indices, job_indices=job_indices)
+    print 'show recommendation results for each resume:\n'
+    show_recommendation_results(result_lists=results, resume_indices=resume_indices, job_indices=job_indices)
+
+    # calculate each metric based on relevancy judgements
+    print 'load relevancy judgements...'
+    relevancy_judgements =

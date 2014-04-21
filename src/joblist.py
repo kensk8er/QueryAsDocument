@@ -1,3 +1,8 @@
+"""
+Executable file for exporting job list into csv file.
+
+When running this file, 'working directory' need to be specified as Project Root (JobPostRecommendation).
+"""
 import json
 import csv
 

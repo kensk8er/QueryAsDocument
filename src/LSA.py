@@ -4,29 +4,51 @@ Executable file for LSA (Latent Semantic Analysis).
 When running this file, 'working directory' need to be specified as Project Root (JobPostRecommendation).
 """
 from glob import glob
+import json
+import os
+import datetime
 from sklearn.decomposition import TruncatedSVD
 from sklearn.feature_extraction.text import HashingVectorizer, TfidfTransformer
 from sklearn.pipeline import Pipeline
 import numpy as np
+from utils.util import enpickle
 
 __author__ = 'kensk8er'
 
 
-def read_text(directory_path):
+def read_resume(directory_path):
     """
     Read all the text located under the specified directory.
 
     :param directory_path: The path for a directory that those files you'd like to read are located.
-    :return: list[str]
+    :return: dict[dict{name, text}]
     """
-    text_list = []
+    return_dict = {}
     files = glob(directory_path + '/' + '*.txt')
 
-    for file in files:
-        text = open(file, 'r').read()
-    text_list.append(text)
+    for FILE in files:
+        dir_name, resume_name = os.path.split(FILE)
+        resume_name = resume_name.split('.')[0]
+        TEXT = open(FILE, 'r').read()
+        return_dict[resume_name] = {}
+        return_dict[resume_name]['name'] = resume_name
+        return_dict[resume_name]['text'] = TEXT
 
-    return text_list
+    return return_dict
+
+
+def read_job_data(file_path):
+    """
+    Read the json file specified.
+
+    :param file_path: The path for the json file you'd like to.
+    :return: dict[dict{job_name, job_description, job_url, company_name, company_description, company_url}]
+    """
+    FILE = open(file_path, 'r')
+    return_dict = json.load(FILE)
+    FILE.close()
+
+    return return_dict
 
 
 def calculate_similarities(document_matrix):
@@ -53,18 +75,19 @@ def calculate_similarities(document_matrix):
     return similarity_matrix
 
 
-def get_n_most_similar_job_posts(similarity_matrix, resume_indices, n=10):
+def get_n_most_similar_job_posts(similarity_matrix, resume_index_list, n=10):
     """
     Return indices of n-most similar job posts and their cosine similarities.
 
     :param similarity_matrix:
     :param n:
-    :param resume_indices: indices that specify which rows correspond to resume
+    :param resume_index_list: indices that specify which rows correspond to resume
     :return: list[list[tuple(job_post_index, cosine_similarity)]]
     """
     return_list = []
+    n_resume = len(resume_index_list)
 
-    for resume_index in resume_indices:
+    for resume_index in resume_index_list:
         similarities = zip(similarity_matrix[resume_index, :].tolist()[0], range(similarity_matrix.shape[0]))
         similarities.sort()
         similarities.reverse()
@@ -75,8 +98,9 @@ def get_n_most_similar_job_posts(similarity_matrix, resume_indices, n=10):
         for similarity in similarities:
             job_post_index = similarity[1]
 
-            if not job_post_index in resume_indices:  # only job posts can be valid results
+            if not job_post_index in resume_index_list:  # only job posts can be valid results
                 cosine_similarity = similarity[0]
+                job_post_index -= n_resume  # convert to index only for job post
                 result.append((job_post_index, cosine_similarity))
                 n_result += 1
 
@@ -88,44 +112,80 @@ def get_n_most_similar_job_posts(similarity_matrix, resume_indices, n=10):
     return return_list
 
 
-def show_results(result_lists, n_resume):
+def show_results(result_lists, resume_indices, job_indices):
     """
     Show the results in formatted way.
 
     :param result_lists: results to show
     :param n_resume: the number of resumes
+    :param resume_indices:
+    :param job_indices:
     """
     # note that this 'resume_indices' is different from the one in 'get_n_most_similar_job_posts'
-    resume_indices = range(n_resume)
-    for (result, resume_index) in zip(result_lists, resume_indices):
-        print '[ resume:', resume_index, ']'
+    #resume_indices = range(n_resume)
+    for (result, resume_name) in zip(result_lists, resume_indices):
+        print '[ resume:', resume_name, ']'
         rank = 1
         for row in result:
-            job_post = row[0]
+            job_post_index = row[0]
             similarity = row[1]
-            print 'rank %s: %s (%s)' % (rank, job_post, similarity)
+            job_post_name = job_indices[job_post_index]['name']
+            job_post_url = job_indices[job_post_index]['url']
+            print 'rank %s: %s (similarity: %s, url: %s)' % (rank, job_post_name, similarity, job_post_url)
             rank += 1
         print ''
 
 
+def convert_dict_list(dict_data):
+    """
+    Convert dictionary format data into list format data. Return both list format data and indices that show which list
+    element corresponds to which dictionary element.
+
+    :param dict_data: dict[dict]
+    :return: list[str] list_data, list[str] indices
+    """
+    list_data = []
+    indices = []
+
+    for dict_datum in dict_data.values():
+        if dict_datum.has_key('name'):
+            # procedure for resume data
+            list_data.append(unicode(dict_datum['text'], 'utf-8'))  # convert str into unicode
+            indices.append(dict_datum['name'])
+        else:
+            # procedure for job data
+            assert isinstance(dict_datum, dict)
+            text_data = '\n'.join([dict_datum['job_name'], dict_datum['job_description'], dict_datum['company_name'],
+                                  dict_datum['company_description']])
+            list_data.append(text_data)
+            indices.append({'name': dict_datum['job_name'], 'url': dict_datum['job_url']})
+
+    return list_data, indices
+
+
 if __name__ == '__main__':
     # parameters
-    n_components = 5  # this value need be less than the number of job posts
-    n_results = 5  # this value need be less than the number of job posts
+    n_components = 150  # this value need be less than the number of job posts
+    n_results = 10  # this value need be less than the number of job posts
 
     # load job post data
     print 'read job post data...'
-    job_text = read_text('data/toy/job')
-    n_job = len(job_text)
+    job_dict = read_job_data('data/job/job_data.json')
+    n_job = len(job_dict)
 
     # load resume data
     print 'read resume data...'
-    resume_text = read_text('data/toy/resume')
-    n_resume = len(resume_text)
+    resume_dict = read_resume('data/resume')
+    n_resume = len(resume_dict)
     n_text = n_job + n_resume
 
+    # convert dictionary format into list format
+    print 'convert dictionary into list format...'
+    job_list, job_indices = convert_dict_list(job_dict)
+    resume_list, resume_indices = convert_dict_list(resume_dict)
+
     # combine job post and resume data
-    text = resume_text + job_text
+    text = resume_list + job_list
 
     # Perform an IDF normalization on the output of HashingVectorizer
     hasher = HashingVectorizer(stop_words='english', non_negative=True,
@@ -145,13 +205,20 @@ if __name__ == '__main__':
     X = np.matrix(lsa.fit_transform(X))
 
     # calculate cosine similarities between each text
+    print 'calculate cosine similarities...'
     similarities = calculate_similarities(X)
+
+    print 'save similarities and indices...'
+    date_time = datetime.datetime.today().strftime("%m%d%H%M%S")
+    enpickle(similarities, 'cache/similarities_' + date_time + '.pkl')
+    enpickle(resume_indices, 'cache/resume_indices_' + date_time + '.pkl')
+    enpickle(job_indices, 'cache/job_indices_' + date_time + '.pkl')
 
     # pick up n-most similar job posts and show them
     print 'pick up', n_results, 'most similar job posts for each resume...'
     results = get_n_most_similar_job_posts(similarity_matrix=similarities,
                                            n=n_results,
-                                           resume_indices=range(n_job, n_text))  # resumes comes after job posts
+                                           resume_index_list=range(n_resume))  # resumes come after job posts
 
     print 'show results for each resume:\n'
-    show_results(result_lists=results, n_resume=n_resume)
+    show_results(result_lists=results, resume_indices=resume_indices, job_indices=job_indices)

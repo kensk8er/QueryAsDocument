@@ -301,7 +301,7 @@ if __name__ == '__main__':
     args = sys.argv
 
     # parameters
-    n_components = range(200, 400, 10)  # this value need be less than the number of job posts
+    n_components = range(10, 410, 10)  # this value need be less than the number of job posts
     n_result = 10  # this value need be less than the number of job posts
 
     os.system('rm result/result.csv')
@@ -341,7 +341,7 @@ if __name__ == '__main__':
 
         # perform LSA
         print 'perform LSA...'
-        lsa = TruncatedSVD(n_components=n_component)
+        lsa = TruncatedSVD(n_components=n_component, algorithm='arpack')
         X = np.matrix(lsa.fit_transform(X))
 
         # calculate cosine similarities between each text

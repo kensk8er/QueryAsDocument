@@ -64,16 +64,18 @@ def calculate_similarities(document_matrix):
     """
     # calculate inner products
     print 'calculate inner products...'
-    inner_product_matrix = np.dot(document_matrix, document_matrix.T)
+    #inner_product_matrix = np.dot(document_matrix, document_matrix.transpose())
+    inner_product_matrix = document_matrix.dot(document_matrix.transpose())
 
     # calculate norms
     print 'calculate norms...'
-    norms = np.sqrt(np.multiply(document_matrix, document_matrix).sum(1))
+    #norms = np.sqrt(np.multiply(document_matrix, document_matrix).sum(1))
+    norms = np.sqrt(document_matrix.multiply(document_matrix).sum(1))
     norm_matrix = np.dot(norms, norms.T)
 
     # calculate similarities
     print 'calculate similarities...'
-    similarity_matrix = inner_product_matrix / norm_matrix
+    similarity_matrix = inner_product_matrix.multiply(1. / norm_matrix)
 
     return similarity_matrix
 
@@ -302,7 +304,7 @@ if __name__ == '__main__':
     # parameters
     n_result = 10  # this value need be less than the number of job posts
 
-    os.system('rm result/result.csv')
+    os.system('rm result/result_vsm.csv')
 
     # load job post data
     print 'read job post data...'
@@ -333,7 +335,7 @@ if __name__ == '__main__':
 
     # calculate TF-IDF
     print 'calculate TF-IDF...'
-    X = np.matrix(vectorizer.fit_transform(text))
+    X = vectorizer.fit_transform(text)
 
     # calculate cosine similarities between each text
     print 'calculate cosine similarities...'

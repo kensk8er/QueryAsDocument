@@ -302,9 +302,9 @@ if __name__ == '__main__':
     args = sys.argv
 
     # parameters
-    n_result = 10  # this value need be less than the number of job posts
+    n_result = 30  # this value need be less than the number of job posts
 
-    os.system('rm result/result_vsm.csv')
+    os.system('rm result/result_vsm_' + str(n_result) + '.csv')
 
     # load job post data
     print 'read job post data...'
@@ -386,7 +386,7 @@ if __name__ == '__main__':
     enpickle(mean_ndcg, 'result/mean_ndcg.pkl')
 
     # output the results
-    writer = csv.writer(file('result/result_vsm.csv', 'w'))
+    writer = csv.writer(file('result/result_vsm_' + str(n_result) + '.csv', 'w'))
     writer.writerow(['model', 'precision@10 (kensk8er)', 'precision@10 (hansong)', 'precision@10 (yuchen)',
                      'mean average precision', 'mean reciprocal rank', 'mean NDCG@10'])
     writer.writerow(['simple tf-idf', recall_precision_fscores['kensk8er'][0], recall_precision_fscores['hansong'][0],

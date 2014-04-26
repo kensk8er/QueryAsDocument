@@ -302,9 +302,9 @@ if __name__ == '__main__':
 
     # parameters
     n_components = range(10, 410, 10)  # this value need be less than the number of job posts
-    n_result = 10  # this value need be less than the number of job posts
+    n_result = 30  # this value need be less than the number of job posts
 
-    os.system('rm result/result.csv')
+    os.system('rm result/result_lsa_' + str(n_result) + '.csv')
 
     for n_component in n_components:
         print 'start procedure ( n_component =', n_component, ')'
@@ -393,7 +393,7 @@ if __name__ == '__main__':
         enpickle(mean_ndcg, 'result/mean_ndcg.pkl')
 
         # output the results
-        writer = csv.writer(file('result/result.csv', 'ab'))
+        writer = csv.writer(file('result/result_lsa_' + str(n_result) + '.csv', 'ab'))
         writer.writerow(['dimensions', 'precision@10 (kensk8er)', 'precision@10 (hansong)', 'precision@10 (yuchen)',
                          'mean average precision', 'mean reciprocal rank', 'mean NDCG@10'])
         writer.writerow([n_component, recall_precision_fscores['kensk8er'][0], recall_precision_fscores['hansong'][0],
